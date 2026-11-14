@@ -1,10 +1,35 @@
 # lang-support-extension-gen-VS-Code-
 
-A Python-first library that generates all core VS Code language-support files for you.
+A Python-first library that generates a full language-support extension skeleton for VS Code.
 
-## Why this project?
+## What "all levels" means here
 
-You can define your language support setup entirely in Python, then run one build script to generate the required extension files.
+This generator now creates customizable outputs for all requested levels:
+
+1. Declarative editing features
+- Syntax highlighting grammar
+- Bracket/pair handling
+- Comment toggling config
+- Auto-indentation and folding markers
+- Snippets
+
+2. Intelligence/LSP scaffold
+- Completion, hover, definition, references
+- Document symbols
+- Semantic tokens
+- Diagnostics, formatting, rename, code actions
+- Python server scaffold + feature config file
+
+3. Code navigation and structure
+- Served through the generated LSP capability configuration
+
+4. Formatting/refactoring/code actions
+- Exposed through generated LSP capability configuration
+
+5. Execution/debug/embedded language support
+- Generated run/build/test tasks
+- Generated debug launch configuration
+- Embedded language mapping support in grammar contribution
 
 ## Quick start
 
@@ -12,12 +37,16 @@ You can define your language support setup entirely in Python, then run one buil
 python build_language_support.py
 ```
 
-That command generates this folder:
+Generated files include:
 
 - `generated-extension/package.json`
 - `generated-extension/language-configuration.json`
-- `generated-extension/syntaxes/pyfeel.tmLanguage.json`
-- `generated-extension/README.md`
+- `generated-extension/syntaxes/*.json`
+- `generated-extension/snippets/*.json`
+- `generated-extension/server/config.json`
+- `generated-extension/server/main.py`
+- `generated-extension/.vscode/tasks.json`
+- `generated-extension/.vscode/launch.json`
 
 ## Pythonic API example
 
@@ -30,12 +59,27 @@ from lang_support_gen import LanguageSupportBuilder
     .with_aliases("my-domain-language")
     .comments(line="#", block=("/*", "*/"))
     .syntax_keywords("if", "else", "let", "fn")
+    .folding(r"^\\s*#region\\b", r"^\\s*#endregion\\b")
+    .indentation(r"^.*:\\s*$", r"^\\s*(return|pass)\\b")
+    .snippets(
+        {
+            "Function": {
+                "prefix": "fn",
+                "body": ["fn ${1:name}(${2:args}) {", "\t${3}", "}"],
+                "description": "Create function",
+            }
+        }
+    )
+    .embedded_languages({"meta.embedded.block.sql": "sql"})
+    .lsp_features(code_actions=True, diagnostics=True)
+    .execution(run="python ${file}", test="python -m unittest", build="python build.py")
+    .debugging(program="${file}")
     .build("./mydsl-extension")
 )
 ```
 
 ## Design goal
 
-- No extra language required.
+- No extra implementation language required for generator logic.
 - User-friendly fluent API.
-- One Python script to generate extension files.
+- One Python script to generate extension files for all levels.
