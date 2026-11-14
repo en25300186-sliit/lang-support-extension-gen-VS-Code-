@@ -47,8 +47,16 @@ class TestLanguageSupportBuilder(unittest.TestCase):
 
         server_config = json.loads((output / "server" / "config.json").read_text(encoding="utf-8"))
         self.assertFalse(server_config["features"]["codeActions"])
+        self.assertEqual(server_config["keywords"], ["else", "if"])
 
-        self.assertTrue((output / "server" / "main.py").exists())
+        server_code = (output / "server" / "main.py").read_text(encoding="utf-8")
+        self.assertIn("textDocument/completion", server_code)
+        self.assertIn("textDocument/hover", server_code)
+        self.assertIn("textDocument/semanticTokens/full", server_code)
+        self.assertIn("textDocument/publishDiagnostics", server_code)
+        self.assertIn("textDocument/codeAction", server_code)
+        self.assertNotIn("Implement protocol loop here", server_code)
+
         self.assertTrue((output / ".vscode" / "tasks.json").exists())
         self.assertTrue((output / ".vscode" / "launch.json").exists())
 
